@@ -27,15 +27,19 @@ def segment(img, save_path):
     stats = cc[2]
     ind = np.argsort(stats[:,-1]) # indices of all connected components
     max_components = []
-    min_val = stats[ind[-2],-1]/10. # exclude background
+    min_val = stats[ind[-2],-1]/3. # exclude background
     mod_num = 1
-    # TODO: the way of determining if connedted to border is wrong!!!
+
     for i in reversed(range(ind.size-1)):
+        # check if touching the boarder: test left, right, up and down, and also min area
         if (stats[ind[i],0] != 0 and stats[ind[i],-1] >= min_val and 
-            (stats[ind[i],0]+stats[ind[i],2]) != img.shape[1]): # TODO: also up and down      
+            (stats[ind[i],0]+stats[ind[i],2]) != img.shape[1] and
+            (stats[ind[i],1] != 0) and
+            (stats[ind[i],1]+stats[ind[i],3]) != img.shape[0]):
             #max_components.append((cc[1]==ind[i])*img)
             cv2.imwrite(save_path+str(mod_num)+'.jpg', (cc[1]==ind[i])*img)
-            mod_num += 1            
+            mod_num += 1       
+
 
 def template_matching(template, img):
     h,w  = template.shape
@@ -270,6 +274,7 @@ def show_modules(classes, centers):
 # given the classfication membership, compute the best quality one
 def select_best(classes):
     best_img_num = []
+    resToFile = []
     for c in classes:
         img_names = classes[c]
         #find_best_img(img_names)
@@ -288,6 +293,7 @@ def select_best(classes):
         #    #print('\n---------------------\n', file=f)
         
         s = 'The best quality image for module '+str(c)+' is '+str(img_names[num])+'.jpg'
+        resToFile.append(s)
         print(s)
     
         filename = img_dir+img_names[num].split('_')[0]+'.jpg'
@@ -295,7 +301,12 @@ def select_best(classes):
         #img = cv2.imread(filename,0)
         #cv2.imshow(s, img)
         #cv2.waitKey(500)
-        
+    
+    # save the resulting best image index information    
+    with open(match_res+'best_image.txt', 'w') as f:
+        for i in resToFile:
+            print(i+'\n', file=f) 
+    
     return best_img_num
 
 

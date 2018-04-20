@@ -199,8 +199,9 @@ class video_process:
         img = cv2.imread(temp_loc, 0)
         
         edges = cv2.Canny(img, 50, 100, apertureSize=3)
-        # the final parameter can influenc how many lines will be detected 
-        lines = cv2.HoughLines(edges,1,np.pi/180,50) 
+        # !!!the final parameter can influence how many lines will be detected 
+        #lines = cv2.HoughLines(edges,1,np.pi/180,50) 
+        lines = cv2.HoughLines(edges,1,np.pi/180,55)
         corners = self.findCorners(lines)
         origin = cv2.cvtColor(self.origin_img, cv2.COLOR_GRAY2RGB)
         for line in lines:

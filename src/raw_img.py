@@ -174,6 +174,13 @@ def test_compute_blur():
         for s in fm:
             print(s, file=f)
 
+# TODO:
+# transform the raw image
+# input: raw image
+def raw_to_persp(img1):
+    img = cv2.imread(match_res+'module 0.jpg', 0)
+    
+    pass
         
 
 #res = find_best_FM(im)
@@ -182,5 +189,5 @@ def test_compute_blur():
 #raw_to_jpg(work_dir+'32bit.raw', 512, 640)
 #test_qf(work_dir+'lena.png')
 #test_compute_blur()
-save_raw_to_jpg(work_dir+'test.raw')
+#save_raw_to_jpg(work_dir+'test.raw')
 

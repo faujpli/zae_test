@@ -32,7 +32,8 @@ dirs = [work_dir, result_dir, img_dir, raw_dir, raw_img_dir, match_res]
 sub_dirs = [match_modules, match_persp, match_persp_full, match_labels]
 
 # used in: video_process.py, matching.py
-dims = [10, 6] # no. of cells in hight and width direction
+#dims = [10, 6] # no. of cells in hight and width direction
+dims = [12, 6]
 # used in module: raw_img.py 
 rows,cols = 512,640
 [offset, num] = [999, 3000] # num of raw images to read
