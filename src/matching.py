@@ -63,28 +63,33 @@ def template_matching(template, img):
 
 
 # segment all single modules 
-def segment_modules(image_indices):
+def segment_modules(img_dir, image_indices):
     for i in image_indices:
         #img = cv2.imread(match_dir+str(i)+'.jpg', 0)    
         #img = cv2.imread(img_dir+str(i)+'.jpg', 0)
-        img = cv2.imread(raw_img_dir+str(i)+'.jpg', 0)
-        save_path = match_modules+str(i)+'_'
+        img = cv2.imread(img_dir+str(i)+'.jpg', 0)
+        #save_path = match_modules+str(i)+'_'
+        save_path = work_dir+str(i)+'_'
+
         #if not os.path.exists(save_path):
             #os.makedirs(save_path)  
         segment(img,save_path)
 
 # transform all the single module images 
 # TODO: add the case for only illustration - no need to perform transformation
-def perspective_all():
+def perspective_all(dir_module, only_for_center):
     # for all the modules iamges, compute the perspective transform
-    for filename in sorted(os.listdir(match_modules), key=lambda x: (int(x.split('_')[0]), int(x.split('.')[0].split('_')[1]))):
-        video = video_process(match_modules+filename)
-        video.segment(video.origin_img) 
-        #corners = video.houghLine(video.module_thresh)
-        #video.perspective(video.origin_img, corners, dims)
-        #cv2.imwrite(match_persp+os.path.splitext(filename)[0] + '.jpg', video.persp_img)
+    for filename in sorted(os.listdir(dir_module), key=lambda x: (int(x.split('_')[0]), int(x.split('.')[0].split('_')[1]))):
+        video = video_process(dir_module+filename)
+        video.segment(video.origin_img)
+        if not only_for_center:
+            corners = video.houghLine(video.module_thresh)
+            video.perspective(video.origin_img, corners, dims)
+            cv2.imwrite(match_persp+os.path.splitext(filename)[0] + '.jpg', video.persp_img)
         
-        # save the transformed images as a whole image, not just a single module
+        # save the centroids of these modules for later use, i.e. 
+        # illustration of modules @show_modules
+        # and also acting as a reference point for transformation
         center = video.center_of_module
         n1, _ = filename.split('_')
 
@@ -92,14 +97,23 @@ def perspective_all():
             centers[n1].append(center)
         else:
             centers[n1] = [center]
-        #img =  np.zeros_like(video.origin_img)
-        #x0, y0 = img.shape
-        #x1, y1 = video.persp_img.shape
-        # TODO: also need to check left and upper boardering regions
-        #corner = np.array([min(center[0]+x1/2.,x0)-x1, min(center[1]+y1/2., y0)-y1]).astype(int)
-        #img[corner[0]:corner[0]+x1,corner[1]:corner[1]+y1] = video.persp_img.copy()        
         
-        #cv2.imwrite(match_persp_full + os.path.splitext(filename)[0] + '.jpg', img
+        
+        # save the perspectively transformed images as a whole image, not just a single module    
+        img = np.zeros_like(video.origin_img)
+        x0, y0 = img.shape
+        x1, y1 = video.persp_img.shape
+
+        
+        # Get the left and upper corner of the module in the transformed image by
+        # checking if touching left, upper, right, down
+        top_left = [max(center[0]-x1/2., 0), max(center[1]-y1/2., 0)]
+        top_left = [min(top_left[0], x0-1-x1), min(top_left[1], y0-1-y1)]
+        top_left = np.array(top_left).astype(int)
+        
+        img[top_left[0]:top_left[0]+x1, top_left[1]:top_left[1]+y1] = video.persp_img.copy()        
+        
+        cv2.imwrite(match_persp_full + os.path.splitext(filename)[0] + '.jpg', img)
 
 
 def classfy_modules(save_with_prob):
@@ -327,10 +341,11 @@ if __name__ == "__main__":
     #img = cv2.imread(test_img,0)
     #segment(img,'')
     
+    only_for_center = False
     centers = {} # centroids for each module in a frame
     image_indices = range(1,800)
-    segment_modules(image_indices)
-    #perspective_all() # have the centroids information
+    #segment_modules(image_indices)
+    perspective_all(match_modules, only_for_center) # have the centroids information
     
     
     # save the matching results to .txt/.csv format

@@ -80,7 +80,7 @@ if __name__ == "__main__":
         m.update()
         
         #time.sleep(0.5)
-        if cv2.waitKey(500) == 27:
+        if cv2.waitKey(250) == 27:
             break
         
     

@@ -11,7 +11,7 @@ import time
 from skimage import exposure
 import scipy.misc
 from setup import *
-
+from matching import segment_modules
 
 
 # compute the image quality based on its sharpness
@@ -99,7 +99,7 @@ def test_raw_video(raw_name):
 # save raw video to jpg images
 def save_raw_to_jpg(raw_name):
     raw = open(raw_name, 'rb')
-    f = np.fromfile(raw, dtype=np.int16, count=rows*cols*(offset+num))
+    f = np.fromfile(raw, dtype=np.uint16, count=rows*cols*(offset+num))
     # normalize the intensities to be in [0,255]
     f = 255.*(f - f.min())/(f.max()-f.min())
     for i in range(offset,offset+num):
@@ -119,20 +119,31 @@ def save_raw_to_jpg(raw_name):
 # read raw image data and convert it to jpg image  
 # Given: file path, dimensions
 # Return: the covnerted image
-def raw_to_jpg(raw_name, rows, cols):
+def raw_to_raw(raw_name, rows, cols):
     raw = open(raw_name, 'rb')
-    f = np.fromfile(raw, dtype=np.uint32)
+    f = np.fromfile(raw, dtype=np.uint16)
     img = 255.*(f - f.min())/(f.max()-f.min())
-    img = np.reshape(img, (rows,cols)).astype(np.uint8)
+    img = np.reshape(img, (rows,cols)).astype(np.uint16)
+    
+    p2, p98 = np.percentile(img, (2, 98))
+    img = exposure.rescale_intensity(img, in_range=(p2, p98))
+    
+    dir = os.path.dirname(raw_name)+'/'
+    name = os.path.basename(raw_name).split('.')[0]
+    scipy.misc.imsave(dir+name+'.jpg', img)
+    
+    indices = []
+    indices.append(name)
+    segment_modules(dir, indices)
     
     #cv2.imshow('img',img)
-    #cv2.waitKey(0)
+    cv2.waitKey(0)
     
     # save as a jpg image
     jpg_name = raw_name.split('.')[0]
     jpg_name += '.jpg'
-    scipy.misc.imsave(jpg_name, img)
-  
+    #scipy.misc.imsave(jpg_name, img)
+    print("good")
     return img_dir+'test.raw'
 
 # short program to test how image size influence the image quality 
@@ -190,4 +201,5 @@ def raw_to_persp(img1):
 #test_qf(work_dir+'lena.png')
 #test_compute_blur()
 #save_raw_to_jpg(work_dir+'test.raw')
+raw_to_raw(work_dir+'raw_img.raw', 512, 640)
 

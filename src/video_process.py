@@ -40,7 +40,6 @@ class video_process:
         self.cell_img = None
         self.center_of_module = None
         
-        self.check_dirs()
                 
     def extract(self, file, num): 
         # extract images from a video file
@@ -64,6 +63,7 @@ class video_process:
     # smooth the images,
     # perform thresholding for the bi-modal images,ane was c
     # morphological close and open
+    # !!! only for segmentation of images with one modules
     def segment(self, img):
         gray = cv2.GaussianBlur(img,(3,3),0)    
         _,result = cv2.threshold(gray,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
