@@ -27,7 +27,7 @@ def segment(img, save_path):
     stats = cc[2]
     ind = np.argsort(stats[:,-1]) # indices of all connected components
     max_components = []
-    min_val = stats[ind[-2],-1]/3. # exclude background
+    min_val = stats[ind[-2],-1]/2. # exclude background
     mod_num = 1
 
     for i in reversed(range(ind.size-1)):
@@ -69,7 +69,7 @@ def segment_modules(img_dir, image_indices):
         #img = cv2.imread(img_dir+str(i)+'.jpg', 0)
         img = cv2.imread(img_dir+str(i)+'.jpg', 0)
         #save_path = match_modules+str(i)+'_'
-        save_path = work_dir+str(i)+'_'
+        save_path = raw_img_module+str(i)+'_'
 
         #if not os.path.exists(save_path):
             #os.makedirs(save_path)  
@@ -343,9 +343,9 @@ if __name__ == "__main__":
     
     only_for_center = False
     centers = {} # centroids for each module in a frame
-    image_indices = range(1,800)
-    #segment_modules(image_indices)
-    perspective_all(match_modules, only_for_center) # have the centroids information
+    image_indices = range(1000,1100)#len(os.listdir(raw_img_dir)))
+    segment_modules(raw_img_dir,image_indices)
+    #perspective_all(match_modules, only_for_center) # have the centroids information
     
     
     # save the matching results to .txt/.csv format

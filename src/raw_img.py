@@ -61,36 +61,45 @@ def test_raw_img():
 
 # read in raw video data
 def test_raw_video(raw_name):
+    # number of images
+    raw_size = os.path.getsize(raw_name)
+    img_num = raw_size / (rows*cols*2) # 4 (32 bits) or 2 (16 bits)
+    num = int(img_num)
+    
     raw = open(raw_name, 'rb')
-    f = np.fromfile(raw, dtype=np.int16, count=rows*cols*(offset+num))
+    f = np.fromfile(raw, dtype=np.uint16, count=rows*cols*(offset+num))
     # normalize the intensities to be in [0,255]
     f = 255.*(f - f.min())/(f.max()-f.min())
-    fm = []
+    fm = []    
     for i in range(offset,offset+num):
         start = rows*cols*i
         end = rows*cols*(i+1)
         img = f[start:end].reshape(rows,cols)
         #qf = format(compute_quality(img), '.6f')
         #qf =format(compute_blur(img), '.4f')
-        fm1 =format(10000*compute_quality(img), '.7f')
-        fm2 =format(compute_blur(img), '.3f')
+        
+        # contrast stretching
+        p2, p98 = np.percentile(img, (2, 98))
+        img = exposure.rescale_intensity(img, in_range=(p2, p98))
+        
+        fm1 =format(1000*compute_quality(img), '.5f')
+        fm2 =format(compute_blur(img), '.5f')
         
         text = fm1+' '+fm2
         fm.append(str(i)+' '+text)
         
-        # contrast stretching
-        p2, p98 = np.percentile(img, (2, 98))
-        img = exposure.rescale_intensity(img, in_range=(p2, p98))     
-        
-        font = cv2.FONT_HERSHEY_SIMPLEX
-        cv2.putText(img, text, (0, 25),
-            cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 1)
-        cv2.imshow('Image', img)
 
-        #scipy.misc.imsave(raw_dir+str(i)+'.jpg', img) # save to jpg file
-        cv2.waitKey(100)
         
-    with open(work_dir+'compare_image_quality.txt', 'w') as f:
+        #scipy.misc.imsave(raw_dir+str(i)+'.jpg', img) # save to jpg file  
+        
+        #font = cv2.FONT_HERSHEY_SIMPLEX
+        #cv2.putText(img, text, (0, 25),
+        #    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 1)
+        #cv2.imshow('Image', img)
+
+        #cv2.waitKey(100)
+    
+    with open(work_dir+os.path.basename(raw_name).split('.')[0]+'_quality.txt', 'w') as f:
         for s in fm:
             print(s, file=f)
             
@@ -98,8 +107,13 @@ def test_raw_video(raw_name):
             
 # save raw video to jpg images
 def save_raw_to_jpg(raw_name):
+    raw_size = os.path.getsize(raw_name)
+    img_num = raw_size / (rows*cols*2) # 4 (32 bits) or 2 (16 bits)
+    num = 100
+    offset = 1000
+    
     raw = open(raw_name, 'rb')
-    f = np.fromfile(raw, dtype=np.uint16, count=rows*cols*(offset+num))
+    f = np.fromfile(raw, dtype=np.int16, count=rows*cols*(offset+num))
     # normalize the intensities to be in [0,255]
     f = 255.*(f - f.min())/(f.max()-f.min())
     for i in range(offset,offset+num):
@@ -194,12 +208,24 @@ def raw_to_persp(img1):
     pass
         
 
+test_dir = '/media/jingpeng/Maxtor/raw_videos/Arzberg/'
+
 #res = find_best_FM(im)
 #test_raw_img()
-#test_raw_video(work_dir+'test.raw')
+#test_raw_video(work_dir+'LockIn_Velox_10m_2ms_100FPS.raw')
 #raw_to_jpg(work_dir+'32bit.raw', 512, 640)
 #test_qf(work_dir+'lena.png')
 #test_compute_blur()
-#save_raw_to_jpg(work_dir+'test.raw')
-raw_to_raw(work_dir+'raw_img.raw', 512, 640)
+save_raw_to_jpg(test_dir+'BYD_SOlow_5ms_6,4A_Night.raw')
+#raw_to_raw(work_dir+'raw_img.raw', 512, 640)
+
+
+#test_vidoes_path = '/media/jingpeng/Maxtor/raw_videos/Speed/test/'
+#for video_file in os.listdir(test_vidoes_path):
+#    print(video_file)
+#    test_raw_video(test_vidoes_path+video_file)
+
+
+
+
 
