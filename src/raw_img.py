@@ -109,13 +109,14 @@ def test_raw_video(raw_name):
 def save_raw_to_jpg(raw_name):
     raw_size = os.path.getsize(raw_name)
     img_num = raw_size / (rows*cols*2) # 4 (32 bits) or 2 (16 bits)
-    num = 100
-    offset = 1000
+    offset = 0
+    num = int(img_num)
+
     
     raw = open(raw_name, 'rb')
     f = np.fromfile(raw, dtype=np.int16, count=rows*cols*(offset+num))
     # normalize the intensities to be in [0,255]
-    f = 255.*(f - f.min())/(f.max()-f.min())
+    #f = 255.*(f - f.min())/(f.max()-f.min())
     for i in range(offset,offset+num):
         start = rows*cols*i
         end = rows*cols*(i+1)
@@ -208,7 +209,8 @@ def raw_to_persp(img1):
     pass
         
 
-test_dir = '/media/jingpeng/Maxtor/raw_videos/Arzberg/'
+#test_dir = '/media/jingpeng/Maxtor/raw_videos/Arzberg/'
+test_dir = '/media/jingpeng/Maxtor/20180507_BDTP_Pressig/test/'
 
 #res = find_best_FM(im)
 #test_raw_img()
@@ -216,7 +218,7 @@ test_dir = '/media/jingpeng/Maxtor/raw_videos/Arzberg/'
 #raw_to_jpg(work_dir+'32bit.raw', 512, 640)
 #test_qf(work_dir+'lena.png')
 #test_compute_blur()
-save_raw_to_jpg(test_dir+'BYD_SOlow_5ms_6,4A_Night.raw')
+save_raw_to_jpg(test_dir+'20180507_WR9,1B_8,54A_5ms_3209-11698.raw')
 #raw_to_raw(work_dir+'raw_img.raw', 512, 640)
 
 

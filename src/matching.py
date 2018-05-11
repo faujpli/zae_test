@@ -82,10 +82,10 @@ def perspective_all(dir_module, only_for_center):
     for filename in sorted(os.listdir(dir_module), key=lambda x: (int(x.split('_')[0]), int(x.split('.')[0].split('_')[1]))):
         video = video_process(dir_module+filename)
         video.segment(video.origin_img)
-        if not only_for_center:
-            corners = video.houghLine(video.module_thresh)
-            video.perspective(video.origin_img, corners, dims)
-            cv2.imwrite(match_persp+os.path.splitext(filename)[0] + '.jpg', video.persp_img)
+        
+        corners = video.houghLine(video.module_thresh)
+        video.perspective(video.origin_img, corners, dims)
+        #cv2.imwrite(match_persp+os.path.splitext(filename)[0] + '.jpg', video.persp_img)
         
         # save the centroids of these modules for later use, i.e. 
         # illustration of modules @show_modules
@@ -243,7 +243,7 @@ def find_best_img(img_names):
     #for i,img in enumerate(np.sort(FMs)):
         #print(i,img)
     
-    plt.imshow(best_img,'gray')
+    plt.imshomatch_modulesw(best_img,'gray')
     plt.tight_layout()
     plt.show()
 
@@ -295,7 +295,8 @@ def select_best(classes):
           
         files = []
         for n in img_names:
-            name = match_modules + n + '.jpg'
+            #name = match_modules + n + '.jpg'
+            name = raw_img_module + n + '.jpg'
             files.append(name)
         FMs = find_best_FM(files)
         num = np.argmax(FMs)
@@ -314,10 +315,12 @@ def select_best(classes):
         
         #img = cv2.imread(filename,0)
         #cv2.imshow(s, img)
-        #cv2.waitKey(500)
+        #cv2match_modules.waitKey(500)
+    
     
     # save the resulting best image index information    
     with open(match_res+'best_image.txt', 'w') as f:
+        print(best_img_num, file=f)
         for i in resToFile:
             print(i+'\n', file=f) 
     
@@ -341,27 +344,27 @@ if __name__ == "__main__":
     #img = cv2.imread(test_img,0)
     #segment(img,'')
     
-    only_for_center = False
+    only_for_center = True
     centers = {} # centroids for each module in a frame
-    image_indices = range(1000,1100)#len(os.listdir(raw_img_dir)))
+    image_indices = range(0,num)#len(os.listdir(raw_img_dir)))
     segment_modules(raw_img_dir,image_indices)
     #perspective_all(match_modules, only_for_center) # have the centroids information
-    
+    perspective_all(raw_img_module, only_for_center)
     
     # save the matching results to .txt/.csv format
-    #save_with_prob = False
-    #classes = classfy_modules(save_with_prob) # True: save with probabilities
-    #write_txt(results, save_with_prob)
-    #write_csv(results, save_with_prob)
+    save_with_prob = False
+    classes = classfy_modules(save_with_prob) # True: save with probabilities
+    write_txt(classes, save_with_prob)
+    #write_csv(classes, save_with_prob)
     
     #classes = {} # dictionary to store the label/class information
     #read_txt(classes)
     
     
     # use either classes or results: classes == results
-    #show_modules(results, centers)
-    #best_img_num = select_best(classes)
-    #save_best(best_img_num)
+    #show_modules(classes, centers)
+    best_img_num = select_best(classes)
+    save_best(best_img_num)
    
     
     

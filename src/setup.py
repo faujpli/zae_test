@@ -24,7 +24,8 @@ match_persp = match_res+'persp/'
 match_labels = match_res+'labels/'
 
 # test images/videos
-test_img = img_dir + '179.jpg'
+#test_img = img_dir + '179.jpg'
+test_img = raw_img_dir+'258.jpg'
 test_img_bin = result_dir+"120_after.jpg"
 bad_img = work_dir + '1.tif'
 
@@ -34,10 +35,11 @@ sub_dirs = [match_modules, match_persp, match_persp_full, match_labels]
 
 # used in: video_process.py, matching.py
 #dims = [10, 6] # no. of cells in hight and width direction
-dims = [12, 6]
+#dims = [12, 6]
+dims = [6, 10]
 # used in module: raw_img.py 
 rows,cols = 512,640
-[offset, num] = [0, 0] # num of raw images to read
+[offset, num] = [0, 8490] # num of raw images to read
 
 # create the folders if necessary
 dirs += sub_dirs

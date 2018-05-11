@@ -169,16 +169,18 @@ class video_process:
         plt.show()
         
     
-    def canny(self, file):  
-        img = cv2.imread(file,cv2.IMREAD_GRAYSCALE)
-        edges = cv2.Canny(img,  50, 100)
+    def canny_detection(self, file):  
+        img = cv2.imread(file)
+        gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+        _,result = cv2.threshold(gray,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+        #edges = cv2.Canny(gray,  50, 100)
+        im2, contours, hierarchy = cv2.findContours(result,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+        cv2.drawContours(result, contours[:], -1, (0,255,0),2)
         
-        plt.subplot(121),plt.imshow(img,cmap = 'gray')
-        plt.title('Original Image'), plt.xticks([]), plt.yticks([])
-        plt.subplot(122),plt.imshow(edges,cmap = 'gray')
-        plt.title('Edge Image'), plt.xticks([]), plt.yticks([])    
-        plt.show()
-    
+        cv2.imshow('test', result)
+        cv2.waitKey(0)
+        
+        
     def houghLineP(self, img):
         edges = cv2.Canny(img, 50, 100, apertureSize=3)   
         lines = cv2.HoughLinesP(edges, 1, np.pi/180, 80,30,10)
@@ -201,7 +203,7 @@ class video_process:
         edges = cv2.Canny(img, 50, 100, apertureSize=3)
         # !!!the final parameter can influence how many lines will be detected 
         #lines = cv2.HoughLines(edges,1,np.pi/180,50) 
-        lines = cv2.HoughLines(edges,1,np.pi/180,55)
+        lines = cv2.HoughLines(edges,1,np.pi/180,30)
         corners = self.findCorners(lines)
         origin = cv2.cvtColor(self.origin_img, cv2.COLOR_GRAY2RGB)
         for line in lines:
@@ -217,8 +219,8 @@ class video_process:
             
             # to plot the hough lines
             cv2.line(origin,(x1,y1),(x2,y2),(0,0,255),1)
-            #cv2.imshow("Detected Lines (in red) - Standard Hough Line Transform", origin)
-            #cv2.waitKey(900)    
+            cv2.imshow("Detected Lines (in red) - Standard Hough Line Transform", origin)
+            cv2.waitKey(500)    
              
         #cv2.imshow('hough', img)
         #cv2.imshow("Detected Lines (in red) - Standard Hough Line Transform", origin)
@@ -226,7 +228,6 @@ class video_process:
         #cv2.waitKey(0)
         
         return corners
-
 
 
     # input parameter is the array of lines returned by Hough transform
@@ -293,8 +294,6 @@ class video_process:
             b = np.array([r1,r2])        
             corners[i,:] = np.linalg.solve(a,b)
             
-       
-                  
         return corners
     
     def plotLines(self, rho, theta):
@@ -416,17 +415,28 @@ class video_process:
     def test_bad_img(self, img):
         pass
     
-      
-if __name__ == "__main__":     
+    def process_multiple_images(self, filenames):
+        for name in filenames:
+            video = video_process(name)
+            video.segment(video.origin_img)
+    
+            #splitCells(img0)
+            corners = video.houghLine(video.module_thresh)
+            video.perspective(video.origin_img, corners, dims)
+            video.splitCells(video.cell_img, dims)
+            video.save_all()
+
+
+if __name__ == "__main__":  
     #video = video_process(work_dir+'160_r2.jpg')
     video = video_process(test_img)
-    video.segment(video.origin_img)
+    #video.segment(video.origin_img)
     
     #splitCells(img0)
-    corners = video.houghLine(video.module_thresh)
-    video.perspective(video.origin_img, corners, dims)
-    video.splitCells(video.cell_img, dims)
-    video.save_all()
+    #corners = video.houghLine(video.module_thresh)
+    #video.perspective(video.origin_img, corners, dims)
+    #video.splitCells(video.cell_img, dims)
+    #video.save_all()
 
     #video.splitCells(video.persp_img, dims)
     
@@ -438,6 +448,10 @@ if __name__ == "__main__":
     #y, x = np.unravel_index(np.argmax(corr), corr.shape)
     #print(x,y)
     #plt.imshow(corr,cmap='gray')
+    
+    
+    
+    video.canny_detection(test_img)
     plt.show()
   
     print("finish")
