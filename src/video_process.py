@@ -172,12 +172,30 @@ class video_process:
     def canny_detection(self, file):  
         img = cv2.imread(file)
         gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
-        _,result = cv2.threshold(gray,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        _,thresh = cv2.threshold(gray,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+        canny = cv2.Canny(gray, 50, 100, apertureSize=3)
         #edges = cv2.Canny(gray,  50, 100)
-        im2, contours, hierarchy = cv2.findContours(result,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-        cv2.drawContours(result, contours[:], -1, (0,255,0),2)
+        im2, contours, hierarchy = cv2.findContours(thresh,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
         
-        cv2.imshow('test', result)
+        cnt = contours[0]
+        for c in  contours:
+            M = cv2.moments(c)
+            cx = int(M['m10']/M['m00'])
+            cy = int(M['m01']/M['m00'])
+        a = []
+
+        for c in contours:
+            approx = cv2.approxPolyDP(cnt,0.01*cv2.arcLength(cnt,True),True)
+            if (len(approx) == 4):
+                cv2.drawContours(img,[c],0,(0,255,0),2)
+            break
+                
+                    #cv2.putText(img, 'o', (x, y),cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 3)
+
+        #cv2.drawContours(img, contours, -1, (0,255,0),2)
+        
+        cv2.imshow('test', img)
         cv2.waitKey(0)
         
         
@@ -451,7 +469,7 @@ if __name__ == "__main__":
     
     
     
-    video.canny_detection(test_img)
+    video.canny_detection(work_dir+'raw_img_1.jpg')
     plt.show()
   
     print("finish")
