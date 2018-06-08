@@ -178,7 +178,17 @@ class video_process:
         #edges = cv2.Canny(gray,  50, 100)
         im2, contours, hierarchy = cv2.findContours(thresh,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
         
+        cv2.drawContours(img, contours[0], -1, (0,255,0),2)
+        cv2.imshow('iii',img)
+        #cv2.waitKey(0)
+        
         cnt = contours[0]
+        rect = cv2.approxPolyDP(cnt,0.01*cv2.arcLength(cnt,True),True)
+        if (len(rect) == 4):
+            print(rect)
+            return self.computeCorners(rect)
+        
+    '''
         for c in  contours:
             M = cv2.moments(c)
             cx = int(M['m10']/M['m00'])
@@ -197,7 +207,27 @@ class video_process:
         
         cv2.imshow('test', img)
         cv2.waitKey(0)
+    '''    
+
+    def computeCorners(self, rect):
+        points = rect.reshape((4,2))
+        ind = np.argsort(points[:,1])
+        upper = points[ind,:][:2,:] # upper corner points
+        lower = points[ind,:][2:,:] # lower corner points
         
+        corners = np.zeros((4,2)) # the clockwise order: upper-left, upper-right, lower-right, lower-left
+        corners[:2,:] = upper
+        corners[2:,:] = lower
+        if (upper[0,0] > upper[1,0]):
+            corners[[0,1]] = corners[[1,0]]
+        if (lower[0,0] < lower[1,0]): # !! from right to left
+            corners[[2,3]] = corners[[3,2]]
+        
+        return corners  
+        
+        
+        
+
         
     def houghLineP(self, img):
         edges = cv2.Canny(img, 50, 100, apertureSize=3)   
@@ -216,14 +246,15 @@ class video_process:
         # img is binary, so we need to save it first and open it in grayscale
         temp_loc = work_dir+'temp.jpg'
         cv2.imwrite(temp_loc, img)
+        img0 = img.copy()
         img = cv2.imread(temp_loc, 0)
         
-        edges = cv2.Canny(img, 50, 100, apertureSize=3)
+        edges = cv2.Canny(img, 50, 100, apertureSize=5)
         # !!!the final parameter can influence how many lines will be detected 
         #lines = cv2.HoughLines(edges,1,np.pi/180,50) 
-        lines = cv2.HoughLines(edges,1,np.pi/180,30)
+        lines = cv2.HoughLines(edges,1,np.pi/180,120)
         corners = self.findCorners(lines)
-        origin = cv2.cvtColor(self.origin_img, cv2.COLOR_GRAY2RGB)
+        #origin = cv2.cvtColor(self.origin_img, cv2.COLOR_GRAY2RGB)
         for line in lines:
             rho,theta = line.tolist()[0]
             a = np.cos(theta)
@@ -236,8 +267,8 @@ class video_process:
             y2 = int(y0 - 1000*(a))
             
             # to plot the hough lines
-            cv2.line(origin,(x1,y1),(x2,y2),(0,0,255),1)
-            cv2.imshow("Detected Lines (in red) - Standard Hough Line Transform", origin)
+            cv2.line(img0,(x1,y1),(x2,y2),(0,0,255),1)
+            cv2.imshow("Detected Lines (in red) - Standard Hough Line Transform", img0)
             cv2.waitKey(500)    
              
         #cv2.imshow('hough', img)
@@ -245,9 +276,8 @@ class video_process:
         #cv2.imwrite(work_dir+'hough.jpg', edges)
         #cv2.waitKey(0)
         
-        return corners
-
-
+        return corners      
+        
     # input parameter is the array of lines returned by Hough transform
     # assume that we hae all four lines
     def findCorners(self, lines):
@@ -348,7 +378,7 @@ class video_process:
     
     # find the contours
     # find the corner points of the module
-    def find_contour(self, img):
+    def find_contou100r(self, img):
         im, contours, hier = cv2.findContours(img, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
         cnt = contours[0]
         for i in contours:
@@ -381,12 +411,16 @@ class video_process:
         ratio = dims[1]*1.0/dims[0] 
         height = corners[:,1].max() - corners[:,1].min()
         corners = np.float32(corners)
+        #corners_new = np.float32([[0,0],[height*ratio,0],[height*ratio,height],[0,height]])
         corners_new = np.float32([[0,0],[height*ratio,0],[height*ratio,height],[0,height]])
+        corners_new += 50
         Proj = cv2.getPerspectiveTransform(corners, corners_new)
-        dst = cv2.warpPerspective(img, Proj, (int(height*ratio),int(height)))
+        dst = cv2.warpPerspective(img, Proj, (int(height*ratio)+100,int(height)+100))
     
         self.persp_img = dst
         self.cell_img = self.persp_img.copy()
+        cv2.imshow('img',self.persp_img)
+        cv2.waitKey(0)
         
 
     #TODO: we can aslo add extra parameters to tune a little of the grid due to the
@@ -418,7 +452,7 @@ class video_process:
     
     def save_all(self):
         dir = result_dir+self.img_name
-        if not os.path.exists(dir):
+        if not os.pa100th.exists(dir):
             os.makedirs(dir)
             
         dir += '/'+self.img_name 
@@ -457,7 +491,7 @@ if __name__ == "__main__":
     #video.save_all()
 
     #video.splitCells(video.persp_img, dims)
-    
+    #for p in rect:
     #img1 = cv2.imread(work_dir+'2.jpg', 0)
     #plt.hist(img1.ravel(),256,[0,256]); plt.show()
     #img2 = cv2.imread(work_dir + '3.jpg', 0)
@@ -468,8 +502,12 @@ if __name__ == "__main__":
     #plt.imshow(corr,cmap='gray')
     
     
+    img = cv2.imread(work_dir+'11.jpg',1)
+    corners = video.canny_detection(work_dir+'11.jpg')
+    #video.houghLine(img)
+    video.perspective(img, corners, [6,10])
     
-    video.canny_detection(work_dir+'raw_img_1.jpg')
+    
     plt.show()
   
     print("finish")
