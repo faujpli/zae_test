@@ -69,9 +69,9 @@ def test_raw_video(raw_name):
     raw = open(raw_name, 'rb')
     f = np.fromfile(raw, dtype=np.uint16, count=rows*cols*(offset+num))
     # normalize the intensities to be in [0,255]
-    f = 255.*(f - f.min())/(f.max()-f.min())
+    #f = 255.*(f - f.min())/(f.max()-f.min())
     fm = []    
-    for i in range(offset,offset+num):
+    for i in range(100,offset+num):
         start = rows*cols*i
         end = rows*cols*(i+1)
         img = f[start:end].reshape(rows,cols)
@@ -79,8 +79,8 @@ def test_raw_video(raw_name):
         #qf =format(compute_blur(img), '.4f')
         
         # contrast stretching
-        p2, p98 = np.percentile(img, (2, 98))
-        img = exposure.rescale_intensity(img, in_range=(p2, p98))
+        #p2, p98 = np.percentile(img, (2, 98))
+        #img = exposure.rescale_intensity(img, in_range=(p2, p98))
         
         fm1 =format(1000*compute_quality(img), '.5f')
         fm2 =format(compute_blur(img), '.5f')
@@ -90,7 +90,8 @@ def test_raw_video(raw_name):
         
 
         
-        #scipy.misc.imsave(raw_dir+str(i)+'.jpg', img) # save to jpg file  
+        scipy.misc.imsave(raw_dir+str(i)+'.jpg', img) # save to jpg file  
+        break
         
         #font = cv2.FONT_HERSHEY_SIMPLEX
         #cv2.putText(img, text, (0, 25),
@@ -173,7 +174,7 @@ def test_qf(filename):
         cv2.imshow('img', roi) 
         cv2.waitKey(200)
 
-# short program to test the effectiveness of the function - compute_blur
+# short program to test tg/Maxtor/Arzbehe effectiveness of the function - compute_blur
 def test_compute_blur():    
     filenames = sorted(os.listdir(match_modules), key=lambda x: (int(x.split('_')[0]), int(x.split('.')[0].split('_')[1])))
     fm = []
@@ -200,17 +201,18 @@ def test_compute_blur():
         for s in fm:
             print(s, file=f)
 
+
 # TODO:
 # transform the raw image
 # input: raw image
 def raw_to_persp(img1):
-    img = cv2.imread(match_res+'module 0.jpg', 0)
+    #img = cv2.imread(match_res+'module 0.jpg', 0)
     
     pass
         
 
-#test_dir = '/media/jingpeng/Maxtor/raw_videos/Arzberg/'
-test_dir = '/media/jingpeng/Maxtor/20180507_BDTP_Pressig/test/'
+test_dir = '/media/jingpeng/Maxtor/Arzberg/'
+#test_dir = '/media/jingpeng/Maxtor/20180507_BDTP_Pressig/test/'
 
 #res = find_best_FM(im)
 #test_raw_img()
@@ -218,14 +220,14 @@ test_dir = '/media/jingpeng/Maxtor/20180507_BDTP_Pressig/test/'
 #raw_to_jpg(work_dir+'32bit.raw', 512, 640)
 #test_qf(work_dir+'lena.png')
 #test_compute_blur()
-save_raw_to_jpg(test_dir+'20180507_WR9,1B_8,54A_5ms_3209-11698.raw')
+#save_raw_to_jpg(test_dir+'20180507_WR9,1B_8,54A_5ms_3209-11698.raw')
 #raw_to_raw(work_dir+'raw_img.raw', 512, 640)
 
 
 #test_vidoes_path = '/media/jingpeng/Maxtor/raw_videos/Speed/test/'
 #for video_file in os.listdir(test_vidoes_path):
 #    print(video_file)
-#    test_raw_video(test_vidoes_path+video_file)
+test_raw_video(test_dir+'BYD_SOlow_5ms_6,4A_Night.raw')
 
 
 
