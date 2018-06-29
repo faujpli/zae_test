@@ -27,7 +27,7 @@ dirs = dict(
     )
 
 params = dict(
-    dims = [12,6], # widht/height
+    dims = [6,10], # height,width
     rows = 512,
     cols = 640,
     offset = 0,

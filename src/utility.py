@@ -5,12 +5,14 @@ import time
 from skimage import exposure
 import scipy.misc
 import os
+from PIL import Image
 from init import params, dirs
 
 
 
 class Util:
-    Prob = 0.8
+    Prob = 0.88
+    Rawname = 'Test video:'
 
     # read raw video data
     # input: raw video name with full path
@@ -21,6 +23,8 @@ class Util:
         raw_size = os.path.getsize(raw_name)
         img_num = raw_size / (rows*cols*2) # 4 (32 bits) or 2 (16 bits)
         num = int(img_num)
+        Util.Rawname = os.path.basename(raw_name).split('.')[0]
+        
         
         raw = open(raw_name, 'rb')
         f = np.fromfile(raw, dtype=np.uint16, count=rows*cols*num) # rows*cols*(offset+num)
@@ -28,8 +32,6 @@ class Util:
         fm = []
         factor = 1    
         for i in range(0,num):
-            if i==200:
-                break
             start = rows*cols*i
             end = rows*cols*(i+1)
             img = f[start:end].reshape(rows,cols)
@@ -42,13 +44,15 @@ class Util:
             fm.append(str(i+1)+'\t'+fm1) # start with index 1
             
             scipy.misc.imsave(dir_to_save+str(i+1)+'.jpg', img) # save to jpg file  
-                         
+        
+        print("origin_finished!")
+                        
         # save the quality factors of the images to a file
-        with open(dirs['work_dir']+os.path.basename(raw_name).split('.')[0]+'_quality.txt', 'w') as f:
+        with open(dirs['work_dir']+Util.Rawname+'_quality.txt', 'w') as f:
             for s in fm:
                 print(s, file=f)
     
-    
+        
     # Compute the probability of the two images being same module
     @staticmethod
     def template_matching(template, img):
@@ -63,15 +67,15 @@ class Util:
     
     # Find out the images that correspond to the same module with very high probability, e.g. 0.85
     @staticmethod
-    def classfy_modules(dir_to_match, save_with_prob):
+    def classify_modules(dir_to_match, save_with_prob):
         # performing classification for the modules
         img_names = sorted(os.listdir(dir_to_match), key=lambda x: int(x.split('_')[0]))
         ref_img = img_names[0]
         ref_name = os.path.splitext(ref_img)[0] # with extension - '.jpg'
-        if save_with_prob == True: # for later consistency
-            ref_name = '('+ref_name+', 1.0)' 
-    
         results = {1:[ref_name]} # default: for template
+        if save_with_prob == True: # for later consistency
+            ref_name = '('+ref_name+', 1.0)'           
+            results_save = {1:[ref_name]}
         template = cv2.imread(dir_to_match+ref_img,0)
         
         for filename in img_names:
@@ -82,12 +86,11 @@ class Util:
             best_key = 0
             for key in results:
                 #template = cv2.imread(dir_to_match+results[key][0]+'.jpg', 0) # not so good
-                if save_with_prob == True:
-                    temp_name = results[key][-1].split(',')[0].split('(')[1] # if with prob
-                else:
-                    temp_name = results[key][-1] # default: without prob 
+                #if save_with_prob == True:
+                    #temp_name = results_save[key][-1].split(',')[0].split('(')[1] # if with prob
+                temp_name = results[key][-1] # default: without prob 
                 template = cv2.imread(dir_to_match+temp_name+'.jpg', 0) # much better
-    
+                
                 res = Util.template_matching(template, img)
                 #print(res)
                 if res > best_match:
@@ -95,17 +98,84 @@ class Util:
                     best_key = key
             
             if best_match > Util.Prob:
+                results[best_key].append(val)
                 if save_with_prob == True:
                     val = '('+val+', '+str(best_match)+')' # with probabilities
-                results[best_key].append(val)
-            else:      
+                    results_save[best_key].append(val)                
+            else:
+                results[len(results)+1] = [val]     
                 if save_with_prob == True:
-                    val = '('+val+', '+str(best_match)+')' # with probabilities           
-                results[len(results)+1] = [val]                      
+                    val = '('+val+', '+str(best_match)+')' # with probabilities
+                    results_save[len(results_save)+1] = [val]
+                          
+        
+        # save the results
+        Util.write_txt(results_save,save_with_prob)
+        best_images = Util.select_best(results)
+        Util.save_best_img(best_images)
+    
+        print('classify_finished')
                
         return results     
+    
+    #save the classification result to a text file
+    @staticmethod
+    def write_txt(results,save_with_prob):
+        filename = 'matching_results'
+        if save_with_prob == True:
+            filename += '_with_prob'
+        filename += '.txt'
+        with open(dirs['work_dir']+filename, 'w') as f:
+            for i in results:
+                #print(os.path.splitext(i[0])[0]+': ', i[1], file=f)
+                s = results[i][0]
+                for n in results[i][1:]:
+                    s += ', '+n
+                print(str(i)+': '+s, file=f)
 
 
+
+    # given the classification results, compute the best quality one
+    @staticmethod
+    def select_best(classes):
+        best_images = []
+        resToFile = []
+        for c in classes:
+            img_names = classes[c]
+              
+            files = []
+            for n in img_names:
+                name = dirs['persp_dir'] + n + '.jpg'
+                files.append(name)
+            FMs = Util.compute_FMs(files)
+            num = np.argmax(FMs)
+            best_images.append(str(img_names[num]))
+            
+            
+            s = 'The best quality image for module '+str(c)+' is '+str(img_names[num])+'.jpg'
+            resToFile.append(s)            
+            print(s)
+
+        # save the resulting best image index information    
+        with open(dirs['work_dir']+'best_images.txt', 'w') as f:
+            print(Util.Rawname+':\n', file=f)
+            for i in resToFile:
+                print(i+'\n', file=f) 
+        
+        return best_images
+
+
+    # compute the quality factors for a sequence
+    @staticmethod
+    def compute_FMs(file_names):
+        FMs = []
+        for name in file_names:
+            img = cv2.imread(name,cv2.IMREAD_GRAYSCALE)
+            FM = Util.compute_quality(img)            
+            FMs.append(FM)
+            
+        return FMs
+    
     # compute the image quality based on its sharpness
     @staticmethod
     def compute_quality(img):
@@ -120,48 +190,37 @@ class Util:
         FM = np.float(Th)/(m*n)
                 
         return FM
-
-
-    # given the classfication results, compute the best quality one
-    def select_best(classes, dir_to_comp):
-        best_img_num = []
-        resToFile = []
-        for c in classes:
-            img_names = classes[c]
-              
-            files = []
-            for n in img_names:
-                name = raw_img_module + n + '.jpg'
-                files.append(name)
-            FMs = find_best_FM(files)
-            num = np.argmax(FMs)
-            best_img_num.append(img_names[num])
+    
+    @staticmethod
+    def save_best_img(best_images):
+        for name in best_images:
+            img = cv2.imread(dirs['persp_dir']+name+'.jpg',0)
+            cv2.imwrite(dirs['work_dir']+name+'.jpg', img)
+            #tiff.save(dirs['work_dir']+name, img)
             
-            #with open(work_dir+'scores.txt', 'a') as f:  
-            #    for i in reversed(np.argsort(FMs)[-10:]):
-            #        print(img_names[i], FMs[i], file=f)
-            #    #print('\n---------------------\n', file=f)
+    @staticmethod
+    def save_tiff(raw_name, dir_to_save):
+        rows = params['rows']
+        cols = params['cols']
+        raw_size = os.path.getsize(raw_name)
+        img_num = raw_size / (rows*cols*2) # 4 (32 bits) or 2 (16 bits)
+        num = int(img_num)
+        Util.Rawname = os.path.basename(raw_name).split('.')[0]        
+        
+        raw = open(raw_name, 'rb')
+        f = np.fromfile(raw, dtype=np.uint16, count=rows*cols*num) # rows*cols*(offset+num)
+          
+        for i in range(1000,num):
+            if i > 1006 :
+                break
+            start = rows*cols*i
+            end = rows*cols*(i+1)
+            img = f[start:end].reshape(rows,cols)
+
+            # contrast stretching
+            p2, p98 = np.percentile(img, (2, 98))
+            img = exposure.rescale_intensity(img, in_range=(p2, p98))
             
-            s = 'The best quality image for module '+str(c)+' is '+str(img_names[num])+'.jpg'
-            resToFile.append(s)
-            print(s)
-        
-            filename = img_dir+img_names[num].split('_')[0]+'.jpg'
-            
-            #img = cv2.imread(filename,0)
-            #cv2.imshow(s, img)
-            #cv2match_modules.waitKey(500)
-        
-        
-        # save the resulting best image index information    
-        with open(match_res+'best_image.txt', 'w') as f:
-            print(best_img_num, file=f)
-            for i in resToFile:
-                print(i+'\n', file=f) 
-        
-        return best_img_num
-
-
-
+            scipy.misc.imsave(dir_to_save+str(i+1)+'.tiff', img) # save to jpg file  
     
     

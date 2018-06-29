@@ -52,11 +52,13 @@ class ImageProcess:
                 self.center_of_module = np.flip(cc[3][ind[i],:],0)
                 
                 corners = self.corner_detection()
-                self.perspective_transform(corners, init.params['dims'])
-                                
-                cv2.imwrite(save_paths[0]+str(mod_num)+'.jpg', self.module_origin)
-                cv2.imwrite(save_paths[1]+str(mod_num)+'.jpg', self.persp_full) # save the perspective image
-                mod_num += 1       
+                if corners is not None:
+                    self.perspective_transform(corners, init.params['dims'])
+                    cv2.imwrite(save_paths[0]+str(mod_num)+'.jpg', self.module_origin)
+                    cv2.imwrite(save_paths[1]+str(mod_num)+'.jpg', self.persp_full) # save the perspective image
+                    mod_num += 1
+                else:
+                    print('not_detected: ',save_paths[0],mod_num)
 
 
     # detect the four corner points
@@ -71,8 +73,9 @@ class ImageProcess:
             if (len(rect) == 4):
                 #arr = approx.reshape(4,2)
                 diff = abs(np.max(rect, axis=0) - np.min(rect, axis=0))
-                if (diff.sum() >= 200):
+                if (diff.sum() >= 150):
                     return self.computeCorners(rect)
+    
                     
     # given four points with any order, find the right order
     # input: rect - numpy array containg four points           
@@ -95,13 +98,14 @@ class ImageProcess:
 
     # perform perspective transformation   
     def perspective_transform(self, corners, dims):
-        ratio = 1.0*dims[1]/dims[0]
+        ratio = 1.0*dims[1]/dims[0]        
         height = corners[:,1].max() - corners[:,1].min()
+        new_width = height*ratio
         corners = np.float32(corners)
-        corners_new = np.float32([[0,0],[height*ratio,0],[height*ratio,height],[0,height]])
-        corners_new += 50 # to make it sit in the middle of the image
+        corners_new = np.float32([[0,0],[new_width,0],[new_width,height],[0,height]])
+        corners_new += 20 # to make it sit in the middle of the image
         Proj = cv2.getPerspectiveTransform(corners, corners_new)
-        dst = cv2.warpPerspective(self.module_origin, Proj, (int(height*ratio)+100,int(height)+100))
+        dst = cv2.warpPerspective(self.module_origin, Proj, (int(new_width),int(height)))
     
         self.persp_img = dst        
         self.perspective_centered()
@@ -117,7 +121,7 @@ class ImageProcess:
         # checking if touching left, upper, right, down
         center = self.center_of_module
         top_left = [max(center[0]-x1/2., 0), max(center[1]-y1/2., 0)]
-        top_left = [min(top_left[0], x0-1-x1), min(top_left[1], y0-1-y1)]
+        top_left = [min(top_left[0], x0-x1), min(top_left[1], y0-y1)]
         top_left = np.array(top_left).astype(int)
         
         self.persp_full[top_left[0]:top_left[0]+x1, top_left[1]:top_left[1]+y1] = self.persp_img.copy()
