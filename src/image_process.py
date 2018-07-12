@@ -57,8 +57,8 @@ class ImageProcess:
                     cv2.imwrite(save_paths[0]+str(mod_num)+'.jpg', self.module_origin)
                     cv2.imwrite(save_paths[1]+str(mod_num)+'.jpg', self.persp_full) # save the perspective image
                     mod_num += 1
-                else:
-                    print('not_detected: ',save_paths[0],mod_num)
+                #else:
+                    #print('not_detected: ',save_paths[0],mod_num)
 
 
     # detect the four corner points
@@ -103,7 +103,6 @@ class ImageProcess:
         new_width = height*ratio
         corners = np.float32(corners)
         corners_new = np.float32([[0,0],[new_width,0],[new_width,height],[0,height]])
-        corners_new += 20 # to make it sit in the middle of the image
         Proj = cv2.getPerspectiveTransform(corners, corners_new)
         dst = cv2.warpPerspective(self.module_origin, Proj, (int(new_width),int(height)))
     

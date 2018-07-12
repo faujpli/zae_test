@@ -15,8 +15,8 @@ from os.path import realpath
 # configuration of all parameters
 
 # the same directory as the zae_test
-#working  = dirname(dirname(dirname(realpath(__file__)))) + '/'
-working = '/home/jingpeng/work_dir/'
+working  = dirname(dirname(dirname(realpath(__file__)))) + '/'
+#working = '/home/jingpeng/work_dir/'
 
 # first-level directory
 dirs = dict(

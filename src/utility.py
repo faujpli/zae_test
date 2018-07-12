@@ -27,7 +27,7 @@ class Util:
         
         
         raw = open(raw_name, 'rb')
-        f = np.fromfile(raw, dtype=np.uint16, count=rows*cols*num) # rows*cols*(offset+num)
+        f = np.fromfile(raw, dtype=np.uint16, count=rows*cols*num) # rows*cols*(offset+num),  np.uint32 (32bits)
         
         fm = []
         factor = 1    
@@ -97,7 +97,7 @@ class Util:
                     best_match = res
                     best_key = key
             
-            if best_match > Util.Prob:
+            if best_match > Util.Prob: # control how similar the module are
                 results[best_key].append(val)
                 if save_with_prob == True:
                     val = '('+val+', '+str(best_match)+')' # with probabilities

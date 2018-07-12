@@ -26,10 +26,10 @@ def segment_modules(img_dir, module_dir, persp_dir):
 
     
 if __name__ == "__main__":
-    #Util.read_raw_video(dirs['work_dir']+'test.raw', dirs['origin_dir'])
-    #segment_modules(dirs['origin_dir'], dirs['module_dir'], dirs['persp_dir'])
-    #Util.classify_modules(dirs['persp_dir'], True)    
-    Util.classify_modules(dirs['work_dir']+'matching_module/', True)
+    #Util.read_raw_video(dirs['work_dir']+'test.raw', dirs['origin_dir']) # Open Raw video and saves raw jpg frames
+    segment_modules(dirs['origin_dir'], dirs['module_dir'], dirs['persp_dir']) # opens raw jpg frames and segment it und tranform it *perspective transformation
+    Util.classify_modules(dirs['persp_dir'], True)    # classification of the moduls
+    #Util.classify_modules(dirs['work_dir']+'matching_module/', True) # onlz for debugging
     
     
     

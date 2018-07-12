@@ -286,7 +286,11 @@ def show_modules(classes, centers):
 
 
 # given the classfication membership, compute the best quality one
-def select_best(classes):
+def select_best(ce for module 1 is 412_1.jpg
+The best quality image for module 2 is 823_1.jpg
+The best quality image for module 3 is 1575_1.jpg
+The best quality image for module 4 is 2307_1.jpg
+The best quality image forlasses):
     best_img_num = []
     resToFile = []
     for c in classes:
